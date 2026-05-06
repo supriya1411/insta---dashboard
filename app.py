@@ -13,81 +13,88 @@ st.title("📊 Instagram Influencer Dashboard")
 file = st.file_uploader("Upload CSV File", type=["csv"])
 
 if file:
+    # Read CSV
     df = pd.read_csv(file)
 
+    # Fix column names
+    df.columns = df.columns.str.title()
+
+    # Clean Score column
+    df['Score'] = df['Score'].astype(str)
+    df['Score'] = df['Score'].str.replace('%', '', regex=False)
+    df['Score'] = pd.to_numeric(df['Score'], errors='coerce')
+
+    # Remove NaN values
+    df = df.dropna(subset=['Score'])
+
+    # Show data
     st.subheader("📄 Data Preview")
     st.dataframe(df)
 
-    # Sort data
-    df = df.sort_values(by="Score", ascending=False)
-
     # Sidebar controls
-    st.sidebar.header("⚙️ Controls")
+    st.sidebar.header("Controls")
 
     chart_type = st.sidebar.selectbox(
-        "Select Chart Type", ["Bar", "Line", "Pie", "Scatter"]
+        "Select Chart Type",
+        ["Bar", "Line"]
     )
 
     color = st.sidebar.selectbox(
-        "Select Color", ["blue", "green", "orange", "purple", "red"]
+        "Select Color",
+        ["blue", "green", "red", "orange"]
     )
 
-    top_n = st.sidebar.slider("Select Top N Influencers", 3, len(df), 5)
-
-    model_type = st.sidebar.selectbox(
-        "Select Prediction Model", ["Linear Regression", "Random Forest"]
+    top_n = st.sidebar.slider(
+        "Select Top N Influencers",
+        3, 200, 5
     )
 
-    df = df.head(top_n)
+    model_choice = st.sidebar.selectbox(
+        "Select Prediction Model",
+        ["Linear Regression", "Random Forest"]
+    )
+
+    # Top influencers
+    top_df = df.sort_values(by="Score", ascending=False).head(top_n)
+
+    top_name = top_df.iloc[0]['Channel_Info']
+    top_score = top_df.iloc[0]['Score']
+
+    st.success(f"🏆 Top Influencer: {top_name} (Score: {top_score})")
 
     # Chart
-    st.subheader("📊 Visualization")
+    st.subheader("📈 Influencer Scores")
 
-    fig, ax = plt.subplots(figsize=(4,4))   # small
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     if chart_type == "Bar":
-        ax.bar(df['Channel_info'], df['Score'], color=color)
-
-    elif chart_type == "Line":
-        ax.plot(df['Channel_info'], df['Score'], marker='o', color=color)
-
-    elif chart_type == "Pie":
-        ax.pie(df['Score'], labels=df['Channel_info'], autopct='%1.1f%%')
-
-    elif chart_type == "Scatter":
-        ax.scatter(df['Channel_info'], df['Score'], color=color)
+        ax.bar(top_df['Channel_Info'], top_df['Score'], color=color)
+    else:
+        ax.plot(top_df['Channel_Info'], top_df['Score'], color=color, marker='o')
 
     plt.xticks(rotation=45)
-    st.pyplot(fig)
+    plt.xlabel("Influencer")
+    plt.ylabel("Score")
 
-    # Top influencer
-    top = df.iloc[0]
-    st.success(f"🏆 Top Influencer: {top['Channel_info']} (Score: {top['Score']})")
+    st.pyplot(fig)
 
     # Prediction
     st.subheader("🤖 Prediction")
 
-    X = np.arange(len(df)).reshape(-1, 1)
-    y = df['Score'].values
+    X = np.array(range(len(top_df))).reshape(-1, 1)
+    y = top_df['Score'].values
 
-    if model_type == "Linear Regression":
+    if model_choice == "Linear Regression":
         model = LinearRegression()
     else:
         model = RandomForestRegressor()
 
     model.fit(X, y)
-    pred = model.predict([[len(df)]])
 
-    st.info(f"📌 Predicted Next Score: {pred[0]:.4f}")
+    future = np.array([[len(top_df)]])
+    prediction = model.predict(future)
 
-    # Trend line
-    st.subheader("📈 Trend Analysis")
-
-    fig2, ax2 = plt.subplots()
-    ax2.plot(y, label="Actual")
-    ax2.plot(model.predict(X), linestyle='--', label="Trend")
-    ax2.legend()
-    st.pyplot(fig2)
+    st.info(f"Predicted Future Score: {prediction[0]:.2f}")
 
 else:
-    st.warning("Please upload your CSV file to start.")
+    st.warning("Please upload a CSV file.")
