@@ -51,9 +51,9 @@ git clone https://github.com/supriya1411/insta---dashboard.git
 
 Instagram Influencer Dashboard
 Live Demo:
-https://insta-dashboard.streamlit.app/⁠�
+https://insta-dashboard.streamlit.app/
 GitHub Repository:
-https://github.com/supriya1411/insta-dashboard⁠�
+https://github.com/supriya1411/insta-dashboard⁠
 Overview
 This is an interactive Instagram Influencer Analytics Dashboard built using Streamlit and Python.
 It allows users to upload data, analyze influencer performance, and visualize insights using charts and machine learning.
